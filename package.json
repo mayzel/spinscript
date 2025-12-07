@@ -1,0 +1,49 @@
+{
+  "name": "spinscript",
+  "displayName": "SpinScript",
+  "description": "Bruker TopSpin Pulse Programming Language Support",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.106.1"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:spinscript"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "spinscript",
+        "aliases": [
+          "spinscript","SpinScript","Bruker"
+        ],
+        "extensions": [
+          "",
+          ".incl",
+          ".pp"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "spinscript",
+        "scopeName": "source.spinscript",
+        "path": "./syntaxes/spinscript.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/vscode": "^1.106.1",
+    "typescript": "^5.9.3"
+  }
+}

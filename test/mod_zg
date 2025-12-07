@@ -1,0 +1,68 @@
+
+#include <Avance.incl>
+#include <Grad.incl>
+#include <Delay.incl>
+#include <WS.incl>
+
+"p2=p1*2"
+"d12=20u"
+
+#ifdef IGF2
+"plw12=plw2*pow(p3/pcpd2,2)"
+#endif
+#ifdef IGF3
+"plw16=plw3*pow(p21/pcpd3,2)"
+#endif
+
+"acqt0=0"
+
+1 ze
+  subr setDecPower()
+2 30m
+  subr recoveryDelay()
+  (p1 ph1 pl1):f1
+  subr ws()
+  subr acqu()
+  30m mc #0 to 2 F0(zd)
+  4u BLKGRAD
+exit
+
+#ifdef ES
+ph1=0
+ph2=0 1
+ph3=0 0 1 1
+#elif defined WG
+ph1=0 2
+ph2=0 0 1 1 2 2 3 3 
+#endif
+ph31=0 2 2 0 
+
+
+;pl0 : 0W
+;pl1 : f1 channel - power level for pulse (default)
+;sp1 : f1 channel - shaped pulse 180 degree
+;p1 : f1 channel -  90 degree high power pulse
+;p2 : f1 channel - 180 degree high power pulse
+;p12: f1 channel - 180 degree shaped pulse (Squa100.1000)   [2 msec]
+;p16: homospoil/gradient pulse
+;d1 : relaxation delay; 1-5 * T1
+;d12: delay for power switching                             [20 usec]
+;d16: delay for homospoil/gradient recovery
+;ns: 8 * n, total number of scans: NS * TD0
+;ds: 4
+
+
+;use gradient ratio:    gp 1 : gp 2
+;                         31 :   11
+
+;for z-only gradients:
+;gpz1: 31%
+;gpz2: 11%
+
+;use gradient files:
+;gpnam1: SMSQ10.100
+;gpnam2: SMSQ10.100
+
+
+
+;$Id:$

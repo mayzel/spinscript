@@ -1,0 +1,148 @@
+;mod_noesyfpgpph
+;NOESY
+;2D homonuclear correlation via dipolar coupling 
+;dipolar coupling may be due to noe or chemical exchange.
+;phase sensitive
+;water suppression using WG, ES
+;with optional flip-back pulse
+
+
+;prosol relations=<triple>
+
+#include <Avance.incl>
+#include <Grad.incl>
+#include <Delay.incl>
+#include <WS.incl>
+
+"p2=p1*2"
+"d12=20u"
+
+"in0=inf1"
+"d0=in0/2-p1*2/3.1416"
+
+#ifdef FB
+"DELTA=d8-p16-d16-p13*2"
+#else
+"DELTA=d8-p16-d16"
+#endif
+
+"acqt0=0"
+baseopt_echo
+
+
+1 ze
+
+2 d1 
+  50u UNBLKGRAD
+
+  subr fb(ph7)
+
+#ifdef LABEL_CN
+  (center (p1 ph1 pl1 d0 p1 ph2 pl1):f1 (p8:sp13 ph2):f2 (p22 ph2 pl3):f3)
+#elif defined LABEL_N
+  (center (p1 ph1 pl1 d0 p1 ph2 pl1):f1 (p22 ph2 pl3):f3)
+#else
+  (p1 ph1 pl1 d0 p1 ph2 pl1):f1
+#endif 
+
+  subr fb(ph8)
+  p16:gp1 d16
+
+#ifdef LABEL_CN
+  DELTA pl12:f2 pl16:f3
+#elif defined LABEL_N
+  DELTA pl16:f3
+#else
+  DELTA
+#endif
+
+  subr fb(ph9)
+  
+  (p1 ph3 pl1):f1
+
+#ifdef ES  
+  subr es(ph4, ph5, gp1, gp2)
+#elif defined WG
+  subr wg(ph4, gp2)
+#endif
+
+#ifdef LABEL_N
+  go=2 ph31 cpd3:f3 finally do:f3
+#elif defined LABEL_CN
+  go=2 ph31 cpd2:f2 cpd3:f3 finally do:f2 do:f3
+#else 
+  go=2 ph31
+#endif
+
+  4u BLKGRAD
+  d1 mc #0 to 2 F1PH(calph(ph1, +90), caldel(d0, +in0))
+
+exit
+
+#ifdef ES
+ph1=0 0 2 2 
+ph3=0 0 0 0 2 2 2 2 1 1 1 1 3 3 3 3
+ph4=0 0 0 0 1 1 1 1
+ph5=2 3
+ph31=0 2 2 0  0 2 2 0  1 3 3 1  1 3 3 1
+#elif defined WG
+ph1=0 2
+ph3=0 0 2 2 
+ph4=0 0 0 0 1 1 1 1 2 2 2 2 3 3 3 3
+ph31=0 2 2 0 1 3 3 1 
+#endif
+
+ph2=0
+
+;ph7=2 0
+;ph8=2 2 2 2 2 2 2 2 0 0 0 0 0 0 0 0
+;ph9=2 2 0 0 1 1 3 3 
+
+
+
+
+;pl1 : f1 channel - power level for pulse (default)
+;pl2 : f2 channel - power level for pulse (default)
+;pl3 : f3 channel - power level for pulse (default)
+;sp1 : f1 channel - shaped pulse  90 degree  (H2O on resonance)
+;sp11: f1 channel - shaped pulse  90 degree  (H2O on resonance)
+;sp13: f2 channel - shaped pulse 180 degree (adiabatic)
+;spnam13: Crp60,0.5,20.1
+;p1 : f1 channel -  90 degree high power pulse
+;p2 : f1 channel - 180 degree high power pulse
+;p8 : f2 channel - 180 degree shaped pulse for inversion (adiabatic)
+;     = 500usec for Crp60,0.5,20.1
+;p11: f1 channel -  90 degree shaped pulse
+;p16: homospoil/gradient pulse
+;p22: f3 channel - 180 degree high power pulse
+;p29: f1 channel -  90 degree shaped pulse
+;d0 : incremented delay (2D) = in0/2-p1*2/3.1416 or 3u
+;d1 : relaxation delay; 1-5 * T1
+;d8 : mixing time
+;d12: delay for power switching                      [20 usec]
+;d16: delay for homospoil/gradient recovery
+;inf1: 1/SW = 2 * DW
+;in0: 1/(2 * SW) = DW
+;nd0: 2
+;ns: 8 * n
+;ds: 16
+;td1: number of experiments
+;FnMODE: States-TPPI, TPPI, States or QSEQ
+
+;for z-only gradients:
+;gpz1: 31%
+;gpz2: 11%
+
+;use gradient files:   
+;gpnam1: SMSQ10.100
+;gpnam2: SMSQ10.100
+
+
+;Processing
+
+;PHC0(F1): 90
+;PHC1(F1): -180
+;FCOR(F1): 1
+
+
+;$Id:$
