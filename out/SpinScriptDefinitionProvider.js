@@ -12,21 +12,17 @@ class SpinScriptDefinitionProvider {
         const name = document.getText(range);
         const line = document.lineAt(position.line).text;
         // if (!line.includes("subr")) return null;
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders)
-            return null;
+        // const workspaceFolders = vscode.workspace.workspaceFolders;
+        // if (!workspaceFolders) return null;
+        // const defs: vscode.Location[] = [];
+        // for (const folder of workspaceFolders) {
+        //     const files = getInclFiles(folder.uri.fsPath);
         const defs = [];
-        for (const folder of workspaceFolders) {
-            const files = getInclFiles(folder.uri.fsPath);
-            // for (const file of files) {
-            //     const content = fs.readFileSync(file, 'utf8');
-            //     const re = new RegExp(`subroutine\\s+${name}\\s*\\(`);
-            //     const match = re.exec(content);
-            //     if (match) {
-            //         const pos = positionAt(content, match.index, file);
-            //         defs.push(pos);
-            //     }
-            // }
+        const searchPaths = this.getSearchPaths(document);
+        for (const searchPath of searchPaths) {
+            if (!fs.existsSync(searchPath))
+                continue;
+            const files = getInclFiles(searchPath);
             for (const file of files) {
                 const content = fs.readFileSync(file, 'utf8');
                 // Match subroutine definitions
@@ -39,7 +35,14 @@ class SpinScriptDefinitionProvider {
                     }
                 }
                 // Match define pulse/delay/etc. definitions
-                const reDefine = new RegExp(`define\\s+\\w+\\s+${name}\\b`);
+                const reDefineVar = new RegExp(`define\\s+\\w+\\s+${name}\\b`);
+                const matchDefineVar = reDefineVar.exec(content);
+                if (matchDefineVar) {
+                    const pos = positionAt(content, matchDefineVar.index, file);
+                    defs.push(pos);
+                }
+                // Match #define BLKGRAD, etc. definitions
+                const reDefine = new RegExp(`define\\s+${name}\\b`);
                 const matchDefine = reDefine.exec(content);
                 if (matchDefine) {
                     const pos = positionAt(content, matchDefine.index, file);
@@ -48,6 +51,27 @@ class SpinScriptDefinitionProvider {
             }
         }
         return defs.length ? defs : null;
+    }
+    getSearchPaths(document) {
+        const paths = [];
+        const docDir = path.dirname(document.uri.fsPath);
+        // 1. Current directory (where the pulse sequence is)
+        paths.push(docDir);
+        // 2. One level higher
+        paths.push(path.dirname(docDir));
+        // 3. Environment variable $TSHOME
+        const tsHome = process.env.TSHOME;
+        if (tsHome) {
+            paths.push(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp'));
+            paths.push(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp', 'user'));
+            // paths.push(path.join(tsHome, 'inc'));
+            // paths.push(path.join(tsHome, 'pulseprogs'));
+        }
+        // 4. VS Code workspace settings
+        const config = vscode.workspace.getConfiguration('spinscript');
+        const customPaths = config.get('pulseProgramPaths', []);
+        paths.push(...customPaths);
+        return paths;
     }
 }
 exports.SpinScriptDefinitionProvider = SpinScriptDefinitionProvider;

@@ -1,33 +1,53 @@
 # SpinScript
 
-A VS Code extension providing syntax highlighting and language support for Bruker TopSpin pulse programming sequences.
+A VS Code extension providing syntax highlighting and lightweight language support for Bruker TopSpin pulse programming sequences.
 
 ## Features
 
-- **Syntax Highlighting** for Bruker pulse sequence files (`.pp`, `.incl`)
-- **Intelligent pattern recognition** for:
-  - Pulse commands (`p0`, `p1`, etc.)
-  - Power levels (`pl0`, `pl1`, etc.)
-  - Gradients (`gp0`, `gp1`, etc.)
-  - Phase cycles (`ph0`, `ph1`, etc.)
-  - Shaped pulses (`sp0`, `sp1`, etc.)
-  - RF channels (`:f1`, `:f2`, `:f3`, `:f4`)
-  - Looping constructs (`lo to`, `mc`, `go=`)
-  - Comments (line and block)
-  - Preprocessor directives
+- Syntax highlighting for Bruker pulse sequences and include files.
+- Jump-to-definition for:
+  - subroutine definitions (`subr` / `subroutine`)
+  - `define` / `#define` declarations (pulse, delay, etc.)
+- Pattern highlighting for pulses, power levels, gradients, phases, shaped pulses, channels, loops, comments and strings.
+- Automatic indexing of include/pulse files from configurable paths and from `$TSHOME` when available.
+- Optional automatic workspace file-association updates (prompt + reload once).
 
-## Supported File Types
+## Supported file types
 
-- `.pp` - Pulse program files
-- `.incl` - Include files
-- Files without extension recognized as pulse programs
+- Commonly used: `.pp`, `.incl`.
+- Files without an extension are common in pulse-program collections — the extension can associate entire directories (see Configuration).
 
 ## Installation
 
-1. Clone or download this repository
+1. Clone or download this repository.
 2. Install dependencies: `npm install`
-3. Compile the extension: `npm run compile`
-4. Press **F5** to launch the extension in debug mode
+3. Compile: `npm run compile`
+4. Run in the Extension Development Host: press **F5** in VS Code.
+
+## Configuration
+
+Settings (in `settings.json` or via the Settings UI):
+
+- spinscript.pulseProgramPaths (array of strings)  
+  Directories to search for pulse/include files. Defaults:
+  - `${workspaceFolder}`
+  - `${workspaceFolder}/..`  
+  Note: environment variables like `$TSHOME` are expanded at runtime by the extension; you may add absolute or workspace-relative paths here.
+
+Example `.vscode/settings.json`:
+{
+  "spinscript.pulseProgramPaths": [
+    "${workspaceFolder}/pp",
+    "/home/nmr/NMR/pp"
+  ],
+  "files.associations": {
+    "**/exp/stan/nmr/lists/pp/*": "spinscript",
+    "/home/nmr/NMR/pp/*": "spinscript"
+  }
+}
+
+## How it finds definitions
+When you request a definition, the extension searches configured directories (current file directory, one level up, spinscript.pulseProgramPaths, and expanded $TSHOME locations) and scans .incl files (and other files in configured folders) for subroutine and define declarations.
 
 ## Development
 
@@ -41,9 +61,6 @@ A VS Code extension providing syntax highlighting and language support for Bruke
 
 Open test pulse sequence files from the `/test` directory to verify syntax highlighting.
 
-## Extension Settings
-
-Currently, SpinScript uses the default Bruker language configuration. Settings can be extended in future versions.
 
 ## Known Issues
 
@@ -54,7 +71,17 @@ Currently, SpinScript uses the default Bruker language configuration. Settings c
 
 ### 0.0.1
 
-Initial release with core syntax highlighting support for Bruker TopSpin pulse programming language.
+- Initial release with core syntax highlighting support for Bruker TopSpin pulse programming language.
+
+### 0.0.2
+- Syntax highlighting following Chris Waudby's vscode-bruker-syntax extension
+- Navigation for define pulse myPulse, define delay myDelay, etc.
+
+### 0.0.3
+- Navigate for #define declarations
+- Automatic include search (current dir + parent), $TSHOME support, configurable paths
+- Automatic spinscript extension association for $TSHOME/exp/stan/nmr/lists/pp 
+
 
 ## Contributing
 

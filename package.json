@@ -2,7 +2,7 @@
   "name": "spinscript",
   "displayName": "SpinScript",
   "description": "Bruker TopSpin Pulse Programming Language Support",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.106.1"
   },
@@ -34,7 +34,23 @@
         "scopeName": "source.spinscript",
         "path": "./syntaxes/spinscript.tmLanguage.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "SpinScript",
+      "properties": {
+        "spinscript.pulseProgamPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [            
+            "${workspaceFolder}",
+            "${workspaceFolder}/.."
+          ],
+          "description": "Directories containing pulse program files to recognize as SpinScript (e.g., ${workspaceFolder}/pp, $TSHOME/exp/stan/nmr/lists/pp)"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
