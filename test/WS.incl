@@ -1,3 +1,6 @@
+
+define delay mixingTime
+
 "p11=1m"
 "p12=2m"
 "spnam11='Sinc1.1000'"

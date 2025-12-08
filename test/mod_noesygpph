@@ -21,14 +21,13 @@
 "d0=in0/2-p1*2/3.1416"
 
 #ifdef FB
-"DELTA=d8-p16-d16-p13*2"
+"DELTA=mixingTime-p16-d16-p13*2"
 #else
-"DELTA=d8-p16-d16"
+"DELTA=mixingTime-p16-d16"
 #endif
 
 "acqt0=0"
 baseopt_echo
-
 
 1 ze
 

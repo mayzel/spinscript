@@ -10,22 +10,39 @@ class SpinScriptDefinitionProvider {
         if (!range)
             return null;
         const name = document.getText(range);
-        // Only activate on 'subr name(...)'
         const line = document.lineAt(position.line).text;
-        if (!line.includes("subr"))
-            return null;
+        // if (!line.includes("subr")) return null;
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders)
             return null;
         const defs = [];
         for (const folder of workspaceFolders) {
             const files = getInclFiles(folder.uri.fsPath);
+            // for (const file of files) {
+            //     const content = fs.readFileSync(file, 'utf8');
+            //     const re = new RegExp(`subroutine\\s+${name}\\s*\\(`);
+            //     const match = re.exec(content);
+            //     if (match) {
+            //         const pos = positionAt(content, match.index, file);
+            //         defs.push(pos);
+            //     }
+            // }
             for (const file of files) {
                 const content = fs.readFileSync(file, 'utf8');
-                const re = new RegExp(`subroutine\\s+${name}\\s*\\(`);
-                const match = re.exec(content);
-                if (match) {
-                    const pos = positionAt(content, match.index, file);
+                // Match subroutine definitions
+                if (line.includes("subr")) {
+                    const reSubr = new RegExp(`subroutine\\s+${name}\\s*\\(`);
+                    const matchSubr = reSubr.exec(content);
+                    if (matchSubr) {
+                        const pos = positionAt(content, matchSubr.index, file);
+                        defs.push(pos);
+                    }
+                }
+                // Match define pulse/delay/etc. definitions
+                const reDefine = new RegExp(`define\\s+\\w+\\s+${name}\\b`);
+                const matchDefine = reDefine.exec(content);
+                if (matchDefine) {
+                    const pos = positionAt(content, matchDefine.index, file);
                     defs.push(pos);
                 }
             }

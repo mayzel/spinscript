@@ -1,65 +1,65 @@
-# spinscript README
+# SpinScript
 
-This is the README for your extension "spinscript". After writing up a brief description, we recommend including the following sections.
+A VS Code extension providing syntax highlighting and language support for Bruker TopSpin pulse programming sequences.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Syntax Highlighting** for Bruker pulse sequence files (`.pp`, `.incl`)
+- **Intelligent pattern recognition** for:
+  - Pulse commands (`p0`, `p1`, etc.)
+  - Power levels (`pl0`, `pl1`, etc.)
+  - Gradients (`gp0`, `gp1`, etc.)
+  - Phase cycles (`ph0`, `ph1`, etc.)
+  - Shaped pulses (`sp0`, `sp1`, etc.)
+  - RF channels (`:f1`, `:f2`, `:f3`, `:f4`)
+  - Looping constructs (`lo to`, `mc`, `go=`)
+  - Comments (line and block)
+  - Preprocessor directives
 
-For example if there is an image subfolder under your extension project workspace:
+## Supported File Types
 
-\!\[feature X\]\(images/feature-x.png\)
+- `.pp` - Pulse program files
+- `.incl` - Include files
+- Files without extension recognized as pulse programs
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Installation
 
-## Requirements
+1. Clone or download this repository
+2. Install dependencies: `npm install`
+3. Compile the extension: `npm run compile`
+4. Press **F5** to launch the extension in debug mode
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Development
+
+### Build Commands
+
+- `npm run compile` - Compile TypeScript to JavaScript
+- `npm run watch` - Watch for changes and recompile automatically
+- `npm run vscode:prepublish` - Prepare for publication
+
+### Testing
+
+Open test pulse sequence files from the `/test` directory to verify syntax highlighting.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+Currently, SpinScript uses the default Bruker language configuration. Settings can be extended in future versions.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Nested block comments not yet supported
+- Multi-line looping constructs may need refinement
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.1
 
-### 1.0.0
+Initial release with core syntax highlighting support for Bruker TopSpin pulse programming language.
 
-Initial release of ...
+## Contributing
 
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+Contributions and feedback are welcome. Please report issues or suggest improvements.
 
 ---
 
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Happy pulse programming!**
