@@ -69,14 +69,12 @@ export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider {
         // 2. One level higher
         paths.push(path.dirname(docDir));
 
-        // 3. Environment variable $TSHOME
+        // 3. Parse $HOME/.topspin1/prop/parfile-dirs.prop if available
+        const home = process.env.HOME || process.env.USERPROFILE;
         const tsHome = process.env.TSHOME;
-        if (tsHome) {
-            paths.push(path.join(tsHome,'exp','stan','nmr','lists','pp'));
-            paths.push(path.join(tsHome,'exp','stan','nmr','lists','pp','user'));
-            
-            // paths.push(path.join(tsHome, 'inc'));
-            // paths.push(path.join(tsHome, 'pulseprogs'));
+        if (tsHome || home) {
+            const propDirs = parsePulseProgramDirs(tsHome || '', home);
+            paths.push(...propDirs);
         }
 
         // 4. VS Code workspace settings
@@ -84,8 +82,55 @@ export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider {
         const customPaths = config.get<string[]>('pulseProgramPaths', []);
         paths.push(...customPaths);
 
+        console.log('SpinScript: search paths for definitions:', paths);
+
         return paths;
     }
+
+}
+
+export function parsePulseProgramDirs(tsHome: string, home: string): string[] {
+    const dirs: string[] = [];
+    const propFile = path.join(home, '.topspin1', 'prop', 'parfile-dirs.prop');
+
+    if (!fs.existsSync(propFile)) {
+        console.log(`SpinScript: ${propFile} not found`);
+        return dirs;
+    }
+
+    try {
+        const content = fs.readFileSync(propFile, 'utf8');
+        const lines = content.split('\n');
+        
+        for (const line of lines) {
+            if (line.startsWith('PP_DIRS=')) {
+                const dirSpec = line.replace('PP_DIRS=', '').trim();
+                // PP_DIRS can contain semicolon-separated paths
+                const pathEntries = dirSpec.split(';');
+                
+                for (const entry of pathEntries) {
+                    const trimmed = entry.trim();
+                    if (!trimmed) continue;
+                    
+                    // Absolute paths start with /
+                    if (trimmed.startsWith('/')) {
+                        dirs.push(trimmed);
+                    } else {
+                        // Relative paths are relative to $TSHOME/exp/stan/nmr
+                        dirs.push(path.join(tsHome, 'exp', 'stan', 'nmr', trimmed));
+                    }
+                }
+                break;
+            }
+        }
+    } catch (err) {
+        console.error(`SpinScript: failed to parse ${propFile}`, err);
+        dirs.push(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp'));
+        dirs.push(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp', 'user'));
+    }
+
+    console.log('SpinScript: parsed PP_DIRS from parfile-dirs.prop:', dirs);
+    return dirs;
 }
 
 function getInclFiles(dir: string): string[] {

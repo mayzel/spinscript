@@ -4,13 +4,17 @@ A VS Code extension providing syntax highlighting and lightweight language suppo
 
 ## Features
 
-- Syntax highlighting for Bruker pulse sequences and include files.
-- Jump-to-definition for:
+- **Syntax highlighting** for Bruker pulse sequences and include files.
+- **Jump-to-definition** for:
   - subroutine definitions (`subr` / `subroutine`)
-  - `define` / `#define` declarations (pulse, delay, etc.)
-- Pattern highlighting for pulses, power levels, gradients, phases, shaped pulses, channels, loops, comments and strings.
-- Automatic indexing of include/pulse files from configurable paths and from `$TSHOME` when available.
-- Optional automatic workspace file-association updates (prompt + reload once).
+  - `define` / `#define` declarations (pulse, delay, channels, etc.)
+- **Pattern highlighting** for pulses, power levels, gradients, phases, shaped pulses, channels, loops, comments and strings.
+- **Auto-discovery** of pulse program directories from:
+  - `$HOME/.topspin1/prop/parfile-dirs.prop` (if available)
+  - `$TSHOME/exp/stan/nmr/lists/pp` (if `TSHOME` env var set)
+  - Current file directory and one level up
+  - Configurable paths via `spinscript.pulseProgramPaths` setting
+- **Automatic workspace file-association** updates (prompt + reload once).
 
 ## Supported file types
 
@@ -28,65 +32,78 @@ A VS Code extension providing syntax highlighting and lightweight language suppo
 
 Settings (in `settings.json` or via the Settings UI):
 
-- spinscript.pulseProgramPaths (array of strings)  
-  Directories to search for pulse/include files. Defaults:
-  - `${workspaceFolder}`
-  - `${workspaceFolder}/..`  
-  Note: environment variables like `$TSHOME` are expanded at runtime by the extension; you may add absolute or workspace-relative paths here.
+- **spinscript.pulseProgramPaths** (array of strings)  
+  Additional directories to search for pulse/include files. Defaults: `${workspaceFolder}`, `${workspaceFolder}/..`  
+  Note: environment variables like `$TSHOME` are expanded at runtime by the extension.
 
 Example `.vscode/settings.json`:
+
+```json
 {
   "spinscript.pulseProgramPaths": [
     "${workspaceFolder}/pp",
-    "/home/nmr/NMR/pp"
-  ],
+    "/Users/may/pp"
+  ]
+}
+```
+
+### Auto-discovery via parfile-dirs.prop
+
+If `$HOME/.topspin1/prop/parfile-dirs.prop` exists, the extension automatically parses the `PP_DIRS` setting and adds those directories to the search path. This is useful when working with Bruker TopSpin installations that define custom pulse program locations.
+
+### File associations
+
+Optionally, add workspace `files.associations` to treat all files in specific directories as SpinScript:
+
+```json
+{
   "files.associations": {
     "**/exp/stan/nmr/lists/pp/*": "spinscript",
-    "/home/nmr/NMR/pp/*": "spinscript"
+    "/Users/may/pp/*": "spinscript"
   }
 }
+```
 
 ## How it finds definitions
-When you request a definition, the extension searches configured directories (current file directory, one level up, spinscript.pulseProgramPaths, and expanded $TSHOME locations) and scans .incl files (and other files in configured folders) for subroutine and define declarations.
+
+When you request a definition (Ctrl+Click or F12), the extension searches in this order:
+1. Current file directory
+2. One level up from current file
+3. Directories parsed from `$HOME/.topspin1/prop/parfile-dirs.prop` (if present)
+4. `$TSHOME/exp/stan/nmr/lists/pp` and `$TSHOME/exp/stan/nmr/lists/pp/user` (if `TSHOME` set)
+5. Paths configured in `spinscript.pulseProgramPaths`
+
+It scans `.incl` files for:
+- `subroutine name(...)` declarations
+- `define type name` declarations
+- `#define type name` declarations
 
 ## Development
 
-### Build Commands
-
-- `npm run compile` - Compile TypeScript to JavaScript
-- `npm run watch` - Watch for changes and recompile automatically
-- `npm run vscode:prepublish` - Prepare for publication
-
-### Testing
-
-Open test pulse sequence files from the `/test` directory to verify syntax highlighting.
-
-
-## Known Issues
-
-- Nested block comments not yet supported
-- Multi-line looping constructs may need refinement
+- `npm run compile` — build
+- `npm run watch` — watch + rebuild
 
 ## Release Notes
 
-### 0.0.1
-
-- Initial release with core syntax highlighting support for Bruker TopSpin pulse programming language.
-
-### 0.0.2
-- Syntax highlighting following Chris Waudby's vscode-bruker-syntax extension
-- Navigation for define pulse myPulse, define delay myDelay, etc.
+### 0.0.4
+- Auto-discover pulse program directories from `parfile-dirs.prop`
 
 ### 0.0.3
-- Navigate for #define declarations
-- Automatic include search (current dir + parent), $TSHOME support, configurable paths
-- Automatic spinscript extension association for $TSHOME/exp/stan/nmr/lists/pp 
+- Support for `#define` preprocessor directives
+- Automatic workspace file associations with one-time reload prompt
+- Debug logging for troubleshooting path resolution
 
+### 0.0.2
+- Extended definition provider and syntax highlighting
+- Support for `define` declarations across multiple types
+
+### 0.0.1
+- Initial release with core syntax highlighting and subroutine jump-to-definition
 
 ## Contributing
 
-Contributions and feedback are welcome. Please report issues or suggest improvements.
+Bug reports and PRs welcome. If you rely on non-standard directory layouts or have feature requests, please open an issue.
 
 ---
 
-**Happy pulse programming!**
+Happy pulse programming!

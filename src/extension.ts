@@ -1,27 +1,55 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { SpinScriptDefinitionProvider } from './SpinScriptDefinitionProvider';
+import * as fs from 'fs';
+import { SpinScriptDefinitionProvider, parsePulseProgramDirs } from './SpinScriptDefinitionProvider';
+
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('SpinScript extension activated');
 
-    // SpinScript file association
+    context.subscriptions.push(
+        vscode.languages.registerDefinitionProvider(
+            { language: "spinscript", scheme: "file" },
+            new SpinScriptDefinitionProvider()
+        )
+    );
+    // Setup file associations for discovered pulse program directories
+    setupFileAssociations(context);
+}
+
+function setupFileAssociations(context: vscode.ExtensionContext) {
     const filesConfig = vscode.workspace.getConfiguration('files');
     const current = filesConfig.get<{[k:string]:string}>('associations') || {};
+
     const paths: string[] = [];
     const tsHome = process.env.TSHOME;
-    if (tsHome) {
-        paths.push(path.join(tsHome,'exp','stan','nmr','lists','pp'));
-        paths.push(path.join(tsHome,'exp','stan','nmr','lists','pp','user'));
+    const home = process.env.HOME || process.env.USERPROFILE;
+
+    if (tsHome || home) {
+        const propDirs = parsePulseProgramDirs(tsHome || '', home);
+        paths.push(...propDirs);
     }
+
+    // Get configured paths
+    const config = vscode.workspace.getConfiguration('spinscript');
+    const customPaths = config.get<string[]>('pulseProgramPaths', []);
+    paths.push(...customPaths);
+
+    // Build file associations
     const toAdd: {[k:string]:string} = {};
     for (const p of paths) {
+        if (!fs.existsSync(p)) {
+            console.log(`SpinScript: directory does not exist: ${p}`);
+            continue;
+        }
         // associate all files in folder (and subfolders)
         toAdd[`${p}/*`] = 'spinscript';
         toAdd[`${p}/**`] = 'spinscript';
     }
 
-    // merge without clobbering existing user entries
+    console.log('SpinScript: file associations to add:', Object.keys(toAdd));
+
+    // Merge without clobbering existing user entries
     const merged = { ...toAdd, ...current };
     for (const k of Object.keys(toAdd)) {
         if (current[k]) {
@@ -34,9 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
     filesConfig.update('associations', merged, vscode.ConfigurationTarget.Workspace)
         .then(() => {
             console.log('SpinScript: workspace file associations updated.');
-            // only offer reload once per VS Code install/workspace (stored in global state)
             if (!alreadyPrompted) {
-                // mark that we've prompted so we don't ask again
                 context.globalState.update('spinscript.associationsPrompted', true)
                     .then(
                         () => { /* persisted */ },
@@ -56,19 +82,6 @@ export function activate(context: vscode.ExtensionContext) {
             console.error('SpinScript: failed to update file associations', err);
             vscode.window.showErrorMessage('SpinScript: failed to update file associations (see devtools console).');
         });
-        
-    // Register definition provider for your language
-    const provider = vscode.languages.registerDefinitionProvider(
-        { language: 'spinscript' },
-        new SpinScriptDefinitionProvider()
-    );
-
-    context.subscriptions.push(
-        vscode.languages.registerDefinitionProvider(
-            { language: "spinscript", scheme: "file" },
-            new SpinScriptDefinitionProvider()
-        )
-    );
 }
 
 export function deactivate() {}
