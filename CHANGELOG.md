@@ -1,3 +1,8 @@
+## [0.0.5] - 2025-12-10
+
+### Added
+- Repository and license metadata to package.json
+
 ## [0.0.4] - 2025-12-09
 
 ### Added

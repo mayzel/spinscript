@@ -23,10 +23,18 @@ A VS Code extension providing syntax highlighting and lightweight language suppo
 
 ## Installation
 
+### From VSIX
+1. Download the `.vsix` file and install:
+2. Ctrl-Shift-P > Extensions: Install From VSIX
+
+### From Source (Development)
 1. Clone or download this repository.
+   git clone https://github.com/mayzel/spinscript.git
+   cd spinscript
 2. Install dependencies: `npm install`
 3. Compile: `npm run compile`
 4. Run in the Extension Development Host: press **F5** in VS Code.
+
 
 ## Configuration
 
@@ -42,7 +50,7 @@ Example `.vscode/settings.json`:
 {
   "spinscript.pulseProgramPaths": [
     "${workspaceFolder}/pp",
-    "/Users/may/pp"
+    "/home/nmr/NMR/pp"
   ]
 }
 ```
@@ -82,8 +90,23 @@ It scans `.incl` files for:
 
 - `npm run compile` — build
 - `npm run watch` — watch + rebuild
+- `npm run vscode:prepublish` — prepare for distribution
+
+## Packaging
+
+To create a `.vsix` package for distribution:
+
+```bash
+npm install -g vsce
+npm run compile
+vsce package
+```
+This generates `spinscript-0.0.5.vsix`.
 
 ## Release Notes
+
+### 0.0.5
+- License and metadata added 
 
 ### 0.0.4
 - Auto-discover pulse program directories from `parfile-dirs.prop`
@@ -102,8 +125,11 @@ It scans `.incl` files for:
 
 ## Contributing
 
-Bug reports and PRs welcome. If you rely on non-standard directory layouts or have feature requests, please open an issue.
+Bug reports and PRs welcome! Please open an issue on [GitHub](https://github.com/mayzel/spinscript/issues).
 
+## License
+
+MIT — see [LICENSE](LICENSE) file
 ---
 
 Happy pulse programming!

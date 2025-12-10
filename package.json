@@ -2,7 +2,12 @@
   "name": "spinscript",
   "displayName": "SpinScript",
   "description": "Bruker TopSpin Pulse Programming Language Support",
-  "version": "0.0.4",
+  "version": "0.0.5",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mayzel/spinscript"
+  },
   "engines": {
     "vscode": "^1.106.1"
   },
@@ -38,7 +43,7 @@
     "configuration": {
       "title": "SpinScript",
       "properties": {
-        "spinscript.pulseProgamPaths": {
+        "spinscript.pulseProgramPaths": {
           "type": "array",
           "items": {
             "type": "string"
