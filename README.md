@@ -104,6 +104,8 @@ vsce package
 This generates `spinscript-0.0.5.vsix`.
 
 ## Release Notes
+### 0.0.6
+- Bugfixes
 
 ### 0.0.5
 - License and metadata added 

@@ -11,14 +11,7 @@ export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider {
 
         const name = document.getText(range);
         const line = document.lineAt(position.line).text;
-        // if (!line.includes("subr")) return null;
 
-        // const workspaceFolders = vscode.workspace.workspaceFolders;
-        // if (!workspaceFolders) return null;
-        // const defs: vscode.Location[] = [];
-
-        // for (const folder of workspaceFolders) {
-        //     const files = getInclFiles(folder.uri.fsPath);
         const defs: vscode.Location[] = [];
         const searchPaths = this.getSearchPaths(document);        
         for (const searchPath of searchPaths) {
@@ -67,7 +60,7 @@ export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider {
         paths.push(docDir);
 
         // 2. One level higher
-        paths.push(path.dirname(docDir));
+        // paths.push(path.dirname(docDir));
 
         // 3. Parse $HOME/.topspin1/prop/parfile-dirs.prop if available
         const home = process.env.HOME || process.env.USERPROFILE;
@@ -109,11 +102,29 @@ export function parsePulseProgramDirs(tsHome: string, home: string): string[] {
                 const pathEntries = dirSpec.split(';');
                 
                 for (const entry of pathEntries) {
-                    const trimmed = entry.trim();
+                    let trimmed = entry.trim();
                     if (!trimmed) continue;
-                    
-                    // Absolute paths start with /
-                    if (trimmed.startsWith('/')) {
+
+                    // Strip surrounding quotes ("..." or '...')
+                    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+                        (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+                        trimmed = trimmed.slice(1, -1).trim();
+                        if (!trimmed) continue;
+                    }
+
+                    // Normalize common escaping coming from Windows-style specs
+                    // e.g. "C\:/Users/..." -> "C:/Users/..." and convert backslashes
+                    trimmed = trimmed.replace(/\\:/g, ':').replace(/\\\\/g, '\\').replace(/\\/g, path.sep);
+
+                    // Detect absolute paths:
+                    // - Unix absolute: starts with '/'
+                    // - Windows drive-letter absolute: 'C:/' or 'C:\'
+                    // - UNC paths: starts with '\\'
+                    const isUnixAbs = trimmed.startsWith('/');
+                    const isWinDrive = /^[A-Za-z]:[\\/]/.test(trimmed);
+                    const isUnc = trimmed.startsWith('\\\\');
+
+                    if (isUnixAbs || isWinDrive || isUnc) {
                         dirs.push(trimmed);
                     } else {
                         // Relative paths are relative to $TSHOME/exp/stan/nmr
