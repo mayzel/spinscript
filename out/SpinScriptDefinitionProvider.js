@@ -55,14 +55,16 @@ class SpinScriptDefinitionProvider {
         // 2. One level higher
         // paths.push(path.dirname(docDir));
         // 3. Parse $HOME/.topspin1/prop/parfile-dirs.prop if available
+        const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
+        const cfgTsHome = spinscriptConfig.get('tshome', '');
         const home = process.env.HOME || process.env.USERPROFILE;
-        const tsHome = process.env.TSHOME;
+        const tsHome = cfgTsHome || process.env.TSHOME || '';
         if (tsHome || home) {
-            const propDirs = parsePulseProgramDirs(tsHome || '', home);
+            const propDirs = parsePulseProgramDirs(tsHome, home);
             paths.push(...propDirs);
         }
         // 4. VS Code workspace settings
-        const config = vscode.workspace.getConfiguration('spinscript');
+        const config = spinscriptConfig; // reuse the config we fetched above
         const customPaths = config.get('pulseProgramPaths', []);
         paths.push(...customPaths);
         console.log('SpinScript: search paths for definitions:', paths);

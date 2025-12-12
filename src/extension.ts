@@ -22,11 +22,13 @@ function setupFileAssociations(context: vscode.ExtensionContext) {
     const current = filesConfig.get<{[k:string]:string}>('associations') || {};
 
     const paths: string[] = [];
-    const tsHome = process.env.TSHOME;
+    const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
+    const cfgTsHome = spinscriptConfig.get<string>('tshome', '');
+    const tsHome = cfgTsHome || process.env.TSHOME || '';
     const home = process.env.HOME || process.env.USERPROFILE;
 
     if (tsHome || home) {
-        const propDirs = parsePulseProgramDirs(tsHome || '', home);
+        const propDirs = parsePulseProgramDirs(tsHome, home);
         paths.push(...propDirs);
     }
 

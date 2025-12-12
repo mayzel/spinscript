@@ -2,7 +2,9 @@
 
 ### Changed
 - Indexing files in one level higher directories
-- Fix to read Windows paths - C\:/Users/user/OneDrive - Company... - from prop file
+- Fix to read Windows paths - `C\:/Users/user/OneDrive - Company...` - from prop file
+- Parse quoted and escaped paths in `PP_DIRS` (supports entries with spaces and `\:` escaped colons)
+- Add `spinscript.tshome` configuration to override `TSHOME` used for path resolution
 
 ## [0.0.5] - 2025-12-10
 

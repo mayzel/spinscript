@@ -15,10 +15,12 @@ function setupFileAssociations(context) {
     const filesConfig = vscode.workspace.getConfiguration('files');
     const current = filesConfig.get('associations') || {};
     const paths = [];
-    const tsHome = process.env.TSHOME;
+    const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
+    const cfgTsHome = spinscriptConfig.get('tshome', '');
+    const tsHome = cfgTsHome || process.env.TSHOME || '';
     const home = process.env.HOME || process.env.USERPROFILE;
     if (tsHome || home) {
-        const propDirs = (0, SpinScriptDefinitionProvider_1.parsePulseProgramDirs)(tsHome || '', home);
+        const propDirs = (0, SpinScriptDefinitionProvider_1.parsePulseProgramDirs)(tsHome, home);
         paths.push(...propDirs);
     }
     // Get configured paths
