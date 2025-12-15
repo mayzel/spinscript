@@ -23,9 +23,9 @@ function setupFileAssociations(context: vscode.ExtensionContext) {
 
     const paths: string[] = [];
     const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
-    const cfgTsHome = spinscriptConfig.get<string>('tshome', '');
-    const tsHome = cfgTsHome || process.env.TSHOME || '';
-    const home = process.env.HOME || process.env.USERPROFILE;
+    const vsCfgTsHome = spinscriptConfig.get<string>('tshome', ''); 
+    const tsHome = process.env.TSHOME || vsCfgTsHome ||  '';
+    const home = process.env.HOME || process.env.USERPROFILE;    
 
     if (tsHome || home) {
         const propDirs = parsePulseProgramDirs(tsHome, home);
@@ -33,20 +33,34 @@ function setupFileAssociations(context: vscode.ExtensionContext) {
     }
 
     // Get configured paths
-    const config = vscode.workspace.getConfiguration('spinscript');
-    const customPaths = config.get<string[]>('pulseProgramPaths', []);
-    paths.push(...customPaths);
+    const customPaths = spinscriptConfig.get<string[]>('pulseProgramPaths', []);
+    
+    // Resolve ${workspaceFolder} variable in custom paths
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+    const resolvedCustomPaths = customPaths.map(p => {
+        return p.replace('${workspaceFolder}', workspaceFolder);
+    });
+    paths.push(...resolvedCustomPaths);
 
     // Build file associations
     const toAdd: {[k:string]:string} = {};
+    const seenBases = new Set<string>();
     for (const p of paths) {
-        if (!fs.existsSync(p)) {
+        const norm = path.normalize(p);
+        if (!fs.existsSync(norm)) {
             console.log(`SpinScript: directory does not exist: ${p}`);
             continue;
         }
+
+        // Normalize to forward-slash form for VS Code globs and dedupe case-insensitively on Windows
+        let keyBase = norm.replace(/\\/g, '/');
+        if (keyBase.endsWith('/')) keyBase = keyBase.slice(0, -1);
+        const dedupeKey = process.platform === 'win32' ? keyBase.toLowerCase() : keyBase;
+        if (seenBases.has(dedupeKey)) continue; // already added equivalent path
+        seenBases.add(dedupeKey);
+
         // associate all files in folder (and subfolders)
-        toAdd[`${p}/*`] = 'spinscript';
-        toAdd[`${p}/**`] = 'spinscript';
+        toAdd[`${keyBase}/*`] = 'spinscript';
     }
 
     console.log('SpinScript: file associations to add:', Object.keys(toAdd));

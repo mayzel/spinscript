@@ -1,3 +1,15 @@
+## [0.0.7] - 2025-12-15
+
+### Added
+- `TSHOME` environment variable overrides `spinscript.tshome` configuration setting
+- Workspace variable substitution for `${workspaceFolder}` in custom paths
+
+### Changed
+- Normalize file association paths to forward-slash format across platforms
+- Deduplicate paths case-insensitively on Windows, case-sensitively on POSIX systems
+- Improved path normalization and deduplication in `parsePulseProgramDirs()`
+- Remove one-level-up default from `pulseProgramPaths` configuration
+
 ## [0.0.6] - 2025-12-11
 
 ### Changed

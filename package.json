@@ -2,7 +2,7 @@
   "name": "spinscript",
   "displayName": "SpinScript",
   "description": "Bruker TopSpin Pulse Programming Language Support",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -49,8 +49,7 @@
             "type": "string"
           },
           "default": [            
-            "${workspaceFolder}",
-            "${workspaceFolder}/.."
+            "${workspaceFolder}"
           ],
           "description": "Directories containing pulse program files to recognize as SpinScript (e.g., ${workspaceFolder}/pp, $TSHOME/exp/stan/nmr/lists/pp)"
         }

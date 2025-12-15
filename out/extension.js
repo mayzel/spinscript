@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = require("vscode");
+const path = require("path");
 const fs = require("fs");
 const SpinScriptDefinitionProvider_1 = require("./SpinScriptDefinitionProvider");
 function activate(context) {
@@ -16,27 +17,40 @@ function setupFileAssociations(context) {
     const current = filesConfig.get('associations') || {};
     const paths = [];
     const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
-    const cfgTsHome = spinscriptConfig.get('tshome', '');
-    const tsHome = cfgTsHome || process.env.TSHOME || '';
+    const vsCfgTsHome = spinscriptConfig.get('tshome', '');
+    const tsHome = process.env.TSHOME || vsCfgTsHome || '';
     const home = process.env.HOME || process.env.USERPROFILE;
     if (tsHome || home) {
         const propDirs = (0, SpinScriptDefinitionProvider_1.parsePulseProgramDirs)(tsHome, home);
         paths.push(...propDirs);
     }
     // Get configured paths
-    const config = vscode.workspace.getConfiguration('spinscript');
-    const customPaths = config.get('pulseProgramPaths', []);
-    paths.push(...customPaths);
+    const customPaths = spinscriptConfig.get('pulseProgramPaths', []);
+    // Resolve ${workspaceFolder} variable in custom paths
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+    const resolvedCustomPaths = customPaths.map(p => {
+        return p.replace('${workspaceFolder}', workspaceFolder);
+    });
+    paths.push(...resolvedCustomPaths);
     // Build file associations
     const toAdd = {};
+    const seenBases = new Set();
     for (const p of paths) {
-        if (!fs.existsSync(p)) {
+        const norm = path.normalize(p);
+        if (!fs.existsSync(norm)) {
             console.log(`SpinScript: directory does not exist: ${p}`);
             continue;
         }
+        // Normalize to forward-slash form for VS Code globs and dedupe case-insensitively on Windows
+        let keyBase = norm.replace(/\\/g, '/');
+        if (keyBase.endsWith('/'))
+            keyBase = keyBase.slice(0, -1);
+        const dedupeKey = process.platform === 'win32' ? keyBase.toLowerCase() : keyBase;
+        if (seenBases.has(dedupeKey))
+            continue; // already added equivalent path
+        seenBases.add(dedupeKey);
         // associate all files in folder (and subfolders)
-        toAdd[`${p}/*`] = 'spinscript';
-        toAdd[`${p}/**`] = 'spinscript';
+        toAdd[`${keyBase}/*`] = 'spinscript';
     }
     console.log('SpinScript: file associations to add:', Object.keys(toAdd));
     // Merge without clobbering existing user entries

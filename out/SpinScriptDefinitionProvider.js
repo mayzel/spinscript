@@ -55,10 +55,11 @@ class SpinScriptDefinitionProvider {
         // 2. One level higher
         // paths.push(path.dirname(docDir));
         // 3. Parse $HOME/.topspin1/prop/parfile-dirs.prop if available
+        //TSHOME can be set in env or in VS Code settings
         const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
-        const cfgTsHome = spinscriptConfig.get('tshome', '');
+        const vsCfgTsHome = spinscriptConfig.get('tshome', '');
+        const tsHome = process.env.TSHOME || vsCfgTsHome || '';
         const home = process.env.HOME || process.env.USERPROFILE;
-        const tsHome = cfgTsHome || process.env.TSHOME || '';
         if (tsHome || home) {
             const propDirs = parsePulseProgramDirs(tsHome, home);
             paths.push(...propDirs);
@@ -74,7 +75,22 @@ class SpinScriptDefinitionProvider {
 exports.SpinScriptDefinitionProvider = SpinScriptDefinitionProvider;
 function parsePulseProgramDirs(tsHome, home) {
     const dirs = [];
+    const seen = new Set();
     const propFile = path.join(home, '.topspin1', 'prop', 'parfile-dirs.prop');
+    function store(p) {
+        if (!p)
+            return;
+        // normalize path and convert backslashes to forward slashes for VS Code globs
+        let n = path.normalize(p).replace(/\\/g, '/');
+        if (n.endsWith('/'))
+            n = n.slice(0, -1);
+        // on Windows, dedupe case-insensitively
+        const key = process.platform === 'win32' ? n.toLowerCase() : n;
+        if (seen.has(key))
+            return;
+        seen.add(key);
+        dirs.push(n);
+    }
     if (!fs.existsSync(propFile)) {
         console.log(`SpinScript: ${propFile} not found`);
         return dirs;
@@ -98,22 +114,22 @@ function parsePulseProgramDirs(tsHome, home) {
                         if (!trimmed)
                             continue;
                     }
-                    // Normalize common escaping coming from Windows-style specs
-                    // e.g. "C\:/Users/..." -> "C:/Users/..." and convert backslashes
-                    trimmed = trimmed.replace(/\\:/g, ':').replace(/\\\\/g, '\\').replace(/\\/g, path.sep);
+                    // Normalize escaped colon and backslashes common in Windows exports
+                    trimmed = trimmed.replace(/\\:/g, ':').replace(/\\\\/g, '\\');
                     // Detect absolute paths:
-                    // - Unix absolute: starts with '/'
-                    // - Windows drive-letter absolute: 'C:/' or 'C:\'
-                    // - UNC paths: starts with '\\'
                     const isUnixAbs = trimmed.startsWith('/');
                     const isWinDrive = /^[A-Za-z]:[\\/]/.test(trimmed);
-                    const isUnc = trimmed.startsWith('\\\\');
+                    const isUnc = trimmed.startsWith('\\\\') || trimmed.startsWith('\\');
                     if (isUnixAbs || isWinDrive || isUnc) {
-                        dirs.push(trimmed);
+                        // absolute as given
+                        // on Windows the trimmed may contain backslashes, normalize when storing
+                        store(trimmed);
                     }
                     else {
                         // Relative paths are relative to $TSHOME/exp/stan/nmr
-                        dirs.push(path.join(tsHome, 'exp', 'stan', 'nmr', trimmed));
+                        if (tsHome) {
+                            store(path.join(tsHome, 'exp', 'stan', 'nmr', trimmed));
+                        }
                     }
                 }
                 break;
@@ -122,8 +138,10 @@ function parsePulseProgramDirs(tsHome, home) {
     }
     catch (err) {
         console.error(`SpinScript: failed to parse ${propFile}`, err);
-        dirs.push(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp'));
-        dirs.push(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp', 'user'));
+        if (tsHome) {
+            store(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp'));
+            store(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp', 'user'));
+        }
     }
     console.log('SpinScript: parsed PP_DIRS from parfile-dirs.prop:', dirs);
     return dirs;

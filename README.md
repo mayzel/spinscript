@@ -112,9 +112,16 @@ npm install -g vsce
 npm run compile
 vsce package
 ```
-This generates `spinscript-0.0.5.vsix`.
+This generates `spinscript-0.0.7.vsix`.
 
 ## Release Notes
+### 0.0.7
+- Normalize and deduplicate file association paths across Windows/POSIX systems
+- Platform-aware path handling: case-sensitive on Linux/macOS, case-insensitive on Windows
+- Resolve `${workspaceFolder}` variable in `pulseProgramPaths` configuration
+- Normalize paths in `parsePulseProgramDirs` output for consistency
+- Remove one-level-up default from `pulseProgramPaths` (only current workspace now)
+
 ### 0.0.6
 - Bugfixes
 
