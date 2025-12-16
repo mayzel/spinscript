@@ -2,7 +2,7 @@
   "name": "spinscript",
   "displayName": "SpinScript",
   "description": "Bruker TopSpin Pulse Programming Language Support",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,8 +27,7 @@
         ],
         "extensions": [
           "",
-          ".incl",
-          ".pp"
+          ".incl"        
         ],
         "configuration": "./language-configuration.json"
       }
@@ -40,7 +39,7 @@
         "path": "./syntaxes/spinscript.tmLanguage.json"
       }
     ],
-    "configuration": {
+    "configuration": [ {
       "title": "SpinScript",
       "properties": {
         "spinscript.pulseProgramPaths": {
@@ -48,13 +47,18 @@
           "items": {
             "type": "string"
           },
-          "default": [            
-            "${workspaceFolder}"
-          ],
+          "default": [],
           "description": "Directories containing pulse program files to recognize as SpinScript (e.g., ${workspaceFolder}/pp, $TSHOME/exp/stan/nmr/lists/pp)"
+        },
+        "spinscript.autoFileAssociations": {
+          "type": "object",
+          "description": "File associations for SpinScript files automatically detected by the extension. This is managed by the extension and should not be edited manually.",
+          "scope": "window",
+          "default": {}
         }
       }
-    }
+    } ],
+    "configurationDefaults": {}
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

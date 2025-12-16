@@ -54,54 +54,32 @@ export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider {
 
     private getSearchPaths(document: vscode.TextDocument): string[] {
         const paths: string[] = [];
-        const docDir = path.dirname(document.uri.fsPath);
-
-        // 1. Current directory (where the pulse sequence is)
-        paths.push(docDir);
-
-        // 2. One level higher
-        // paths.push(path.dirname(docDir));
-
-        // 3. Parse $HOME/.topspin1/prop/parfile-dirs.prop if available
-        //TSHOME can be set in env or in VS Code settings
         const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
-        const vsCfgTsHome = spinscriptConfig.get<string>('tshome', ''); 
-        const tsHome = process.env.TSHOME || vsCfgTsHome ||  '';
+        const vsCfgTsHome = spinscriptConfig.get<string>('tshome', '');
+        const tsHome = process.env.TSHOME || vsCfgTsHome || '';
         const home = process.env.HOME || process.env.USERPROFILE;
-   
-        if (tsHome || home) {
-            const propDirs = parsePulseProgramDirs(tsHome, home);
-            paths.push(...propDirs);
-        }
 
-        // 4. VS Code workspace settings
-        const config = spinscriptConfig; // reuse the config we fetched above
-        const customPaths = config.get<string[]>('pulseProgramPaths', []);
-        paths.push(...customPaths);
+        // // 1. Start with the directory of the currently open file
+        // paths.push(path.dirname(document.uri.fsPath));
 
-        console.log('SpinScript: search paths for definitions:', paths);
+        // 2. Add paths from TopSpin property file
+        paths.push(...parsePulseProgramDirs(tsHome, home));
 
-        return paths;
+        // 3. Add paths from VS Code settings
+        paths.push(...spinscriptConfig.get<string[]>('pulseProgramPaths', []));
+
+        // Resolve, validate, and deduplicate all collected paths
+        const resolvedPaths = resolveAndValidatePaths(paths);
+        console.log('SpinScript: resolved search paths for definitions:', resolvedPaths);
+
+        return resolvedPaths;
     }
 
 }
 
 export function parsePulseProgramDirs(tsHome: string, home: string): string[] {
     const dirs: string[] = [];
-    const seen = new Set<string>();
     const propFile = path.join(home, '.topspin1', 'prop', 'parfile-dirs.prop');
-
-    function store(p: string) {
-        if (!p) return;
-        // normalize path and convert backslashes to forward slashes for VS Code globs
-        let n = path.normalize(p).replace(/\\/g, '/');
-        if (n.endsWith('/')) n = n.slice(0, -1);
-        // on Windows, dedupe case-insensitively
-        const key = process.platform === 'win32' ? n.toLowerCase() : n;
-        if (seen.has(key)) return;
-        seen.add(key);
-        dirs.push(n);
-    }
 
     if (!fs.existsSync(propFile)) {
         console.log(`SpinScript: ${propFile} not found`);
@@ -139,28 +117,62 @@ export function parsePulseProgramDirs(tsHome: string, home: string): string[] {
 
                     if (isUnixAbs || isWinDrive || isUnc) {
                         // absolute as given
-                        // on Windows the trimmed may contain backslashes, normalize when storing
-                        store(trimmed);
+                        dirs.push(trimmed);
                     } else {
                         // Relative paths are relative to $TSHOME/exp/stan/nmr
                         if (tsHome) {
-                            store(path.join(tsHome, 'exp', 'stan', 'nmr', trimmed));
+                            dirs.push(path.join(tsHome, 'exp', 'stan', 'nmr', trimmed));
                         }
                     }
                 }
                 break;
             }
         }
+        console.log('SpinScript: parsed PP_DIRS from parfile-dirs.prop:', dirs);
+        return dirs;
     } catch (err) {
         console.error(`SpinScript: failed to parse ${propFile}`, err);
+        // Fallback to default paths on error
         if (tsHome) {
-            store(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp'));
-            store(path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp', 'user'));
+            return [
+                path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp'),
+                path.join(tsHome, 'exp', 'stan', 'nmr', 'lists', 'pp', 'user')
+            ];
         }
+        return [];
+    }
+}
+
+export function resolveAndValidatePaths(rawPaths: string[]): string[] {
+    const seen = new Set<string>();
+    const validatedPaths: string[] = [];
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+
+    for (const p of rawPaths) {
+        if (!p) continue;
+
+        // 1. Resolve ${workspaceFolder}
+        const resolved = p.replace('${workspaceFolder}', workspaceFolder).trim();
+        if (!resolved) continue;
+
+        // 2. Normalize the path
+        const normalized = path.normalize(resolved);
+
+        // 3. Check for existence
+        if (!fs.existsSync(normalized)) {
+            console.log(`SpinScript: directory does not exist, skipping: ${normalized}`);
+            continue;
+        }
+
+        // 4. Deduplicate (case-insensitively on Windows)
+        const key = process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+        if (seen.has(key)) continue;
+
+        seen.add(key);
+        validatedPaths.push(normalized);
     }
 
-    console.log('SpinScript: parsed PP_DIRS from parfile-dirs.prop:', dirs);
-    return dirs;
+    return validatedPaths;
 }
 
 function getInclFiles(dir: string): string[] {

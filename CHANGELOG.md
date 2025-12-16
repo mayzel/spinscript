@@ -1,8 +1,11 @@
-## [0.0.7] - 2025-12-15
+# Change Log
+## [0.0.8] - 2025-12-15
+- Use only $HOME/.topspin1/prop/parfile-dirs.prop PP_DIRS for assosiation 
+- Use single and global settings.json 
 
+## [0.0.7] - 2025-12-14
 ### Added
 - `TSHOME` environment variable overrides `spinscript.tshome` configuration setting
-- Workspace variable substitution for `${workspaceFolder}` in custom paths
 
 ### Changed
 - Normalize file association paths to forward-slash format across platforms
@@ -11,6 +14,7 @@
 - Remove one-level-up default from `pulseProgramPaths` configuration
 
 ## [0.0.6] - 2025-12-11
+- This release introduces a major new feature for automatic file association and includes several stability improvements.
 
 ### Changed
 - Indexing files in one level higher directories
@@ -24,11 +28,16 @@
 - Repository and license metadata to package.json
 
 ## [0.0.4] - 2025-12-09
+- **Automatic File Association**: The extension now automatically detects pulse program directories and applies the `spinscript` language mode.
+- It reads pulse program paths from the TopSpin configuration file (`$HOME/.topspin1/prop/parfile-dirs.prop`).
+- It uses the new `spinscript.tshome` and `spinscript.pulseProgramPaths` settings for configuration.
+- The extension now watches for configuration changes and updates file associations dynamically without requiring a window reload.
 
 ### Added
 - Parse `$HOME/.topspin1/prop/parfile-dirs.prop` to auto-discover pulse program directories
 - Debug logging for search paths in `getSearchPaths()`
 - Improved error handling and logging for `parsePulseProgramDirs()`
+### Fixed
 
 ### Changed
 - Refactored definition provider search path logic for better maintainability
@@ -50,7 +59,7 @@
 - Extended syntax highlighting grammar from JSON schema
 - Recursive directory search for include files
 
-## [0.0.1] - 2025-12-06
+## [0.0.1] - 2024-XX-XX
 
 ### Added
 - Initial release with Jump-to-definition for subroutine definitions
