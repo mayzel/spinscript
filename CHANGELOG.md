@@ -1,4 +1,10 @@
 # Change Log
+## [0.0.9] - 2025-12-16
+- **Enhanced Hover**: The hover tooltip now displays the full subroutine code block (including the body).
+- **Improved Parsing**: Correctly handles subroutines with curly braces on subsequent lines and balances nested braces.
+- Fixed a bug in `getSearchPaths` where `tsHome` was incorrectly reassigned.
+- Simplified README and clarified `$TSHOME` usage.
+
 ## [0.0.8] - 2025-12-15
 - Use only $HOME/.topspin1/prop/parfile-dirs.prop PP_DIRS for assosiation 
 - Use single and global settings.json 

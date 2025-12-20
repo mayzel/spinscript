@@ -7,10 +7,15 @@ import { SpinScriptDefinitionProvider, parsePulseProgramDirs, resolveAndValidate
 export function activate(context: vscode.ExtensionContext) {
     console.log('SpinScript extension activated');
 
+    const definitionProvider = new SpinScriptDefinitionProvider();
     context.subscriptions.push(
         vscode.languages.registerDefinitionProvider(
             { language: "spinscript", scheme: "file" },
-            new SpinScriptDefinitionProvider()
+            definitionProvider
+        ),
+        vscode.languages.registerHoverProvider(
+            { language: "spinscript", scheme: "file" },
+            definitionProvider
         )
     );
 

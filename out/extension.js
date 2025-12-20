@@ -6,7 +6,8 @@ const vscode = require("vscode");
 const SpinScriptDefinitionProvider_1 = require("./SpinScriptDefinitionProvider");
 function activate(context) {
     console.log('SpinScript extension activated');
-    context.subscriptions.push(vscode.languages.registerDefinitionProvider({ language: "spinscript", scheme: "file" }, new SpinScriptDefinitionProvider_1.SpinScriptDefinitionProvider()));
+    const definitionProvider = new SpinScriptDefinitionProvider_1.SpinScriptDefinitionProvider();
+    context.subscriptions.push(vscode.languages.registerDefinitionProvider({ language: "spinscript", scheme: "file" }, definitionProvider), vscode.languages.registerHoverProvider({ language: "spinscript", scheme: "file" }, definitionProvider));
     // Setup file associations for discovered pulse program directories
     setupFileAssociations(context);
     // Re-run setup when the configuration changes

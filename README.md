@@ -4,44 +4,32 @@ A VS Code extension providing syntax highlighting and "Go to Definition" for the
 
 ## Features
 
-*   **Syntax Highlighting**: Provides syntax highlighting for SpinScript files.
-*   **Go to Definition**: Use `F12` or `Ctrl+Click` to jump to the definition of subroutines (`subr`) and variables created with `define`.
-*   **Automatic File Association**: The extension automatically identifies your pulse program directories and applies the `spinscript` language mode to all files within them. This feature works by:
-    1.  Reading your TopSpin configuration file (`$HOME/.topspin1/prop/parfile-dirs.prop`).
-    2.  Scanning directories specified in your VS Code settings.
-
-## How it finds definitions
-
-When you request a definition (Ctrl+Click or F12), the extension searches in this order:
-1. Directories parsed from `$HOME/.topspin1/prop/parfile-dirs.prop` (if present)
-2. Paths configured in `spinscript.pulseProgramPaths`
-
-It scans `.incl` files for:
-- `subroutine name(...)` declarations
-- `define type name` declarations
-- `#define type name` declarations
+*   **Syntax Highlighting**: Comprehensive highlighting for Bruker pulse programs files.
+*   **Go to Definition**: Jump to `subroutine`, `define`, and `#define` declarations across your project and included `.incl` files.
+*   **Rich Hover**: Hover over a subroutine name to view its full implementation code in a floating window.
+*   **Automatic Configuration**: Automatically detects TopSpin pulse program directories based on `$TSHOME` and `parfile-dirs.prop`.
+*   **Custom Paths**: Easily configure additional search paths via settings.
 
 ## Configuration
 
 The extension uses the following settings, which can be configured in your VS Code `settings.json` file:
 
-*   The extension uses the `$TSHOME` environment variable if it is set.
-*   `spinscript.tshome`: The absolute path to your TopSpin installation directory. This is used to resolve relative paths found in `parfile-dirs.prop` if `$TSHOME` is not set
-*   `spinscript.pulseProgramPaths`: An array of additional directory paths that contain SpinScript pulse programs. This is useful for project-specific or user-defined program locations. 
+*   The absolute path to your TopSpin installation director shall be defined either via `$TSHOME` environment variable or  `spinscript.tshome`.  
+*   The TopSpin installation director is used to resolve relative paths found in `parfile-dirs.prop`
+
 
 #### Example `settings.json`:
 ```json
 {
-  "spinscript.tshome": "C:\\Bruker\\TopSpin4.1.3",
+  "spinscript.tshome": "C:\\Bruker\\TopSpin5.0.0",
   "spinscript.pulseProgramPaths": [
-    "${workspaceFolder}/pp",
     "/home/nmr/NMR/pp"
   ]
 }
 ```
-On activation, the extension scans the configured directories, generates a set of file association rules (e.g., `"C:/path/to/pp/**": "spinscript"`), and merges them into your global `files.associations` setting. This process runs automatically when you change the `spinscript.tshome` or `spinscript.pulseProgramPaths` settings.
+On activation, the extension scans the configured directories, generates a set of file association rules (e.g., `"C:/path/to/pp/**": "spinscript"`), and merges them into your global `files.associations` setting. 
 
-To edit the workspace `settings.json` inside VS Code: open the Command Palette (`Ctrl/Cmd+Shift+P`) and choose `Preferences: Open Workspace Settings (JSON)`, or open the file `.vscode/settings.json` in the explorer.
+To edit the User `settings.json` inside VS Code: open the Command Palette (`Ctrl/Cmd+Shift+P`) and choose `Preferences: Open User Settings`, or open the file `.config/Code/User/settings.json` in the explorer.
 
 ## Installation
 ### From VSIX

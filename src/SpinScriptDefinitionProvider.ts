@@ -2,18 +2,41 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider {
+export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider, vscode.HoverProvider {
 
     provideDefinition(document: vscode.TextDocument, position: vscode.Position) {
-
         const range = document.getWordRangeAtPosition(position, /[A-Za-z_]\w*/);
         if (!range) return null;
 
         const name = document.getText(range);
-        const line = document.lineAt(position.line).text;
+        const searchPaths = this.getSearchPaths(document);
+        
+        const matches = this.findMatches(searchPaths, name);
+        
+        return matches.map(m => positionAt(m.content, m.index, m.file));
+    }
 
-        const defs: vscode.Location[] = [];
-        const searchPaths = this.getSearchPaths(document);        
+    provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
+        const range = document.getWordRangeAtPosition(position, /[A-Za-z_]\w*/);
+        if (!range) return null;
+
+        const name = document.getText(range);
+        const searchPaths = this.getSearchPaths(document);
+
+        const matches = this.findMatches(searchPaths, name);
+        if (matches.length === 0) return null;
+
+        const match = matches[0];
+        const md = new vscode.MarkdownString();
+        md.appendCodeblock(match.lineText, 'spinscript');
+        md.appendMarkdown(`\n_Defined in ${path.basename(match.file)}_`);
+        
+        return new vscode.Hover(md, range);
+    }
+
+    private findMatches(searchPaths: string[], name: string): { file: string, index: number, content: string, lineText: string }[] {
+        const matches: { file: string, index: number, content: string, lineText: string }[] = [];
+
         for (const searchPath of searchPaths) {
             if (!fs.existsSync(searchPath)) continue;
             const files = getInclFiles(searchPath);
@@ -21,56 +44,81 @@ export class SpinScriptDefinitionProvider implements vscode.DefinitionProvider {
             for (const file of files) {
                 const content = fs.readFileSync(file, 'utf8');
                 
-                // Match subroutine definitions
-                if (line.includes("subr")) {
-                    const reSubr = new RegExp(`subroutine\\s+${name}\\s*\\(`);
-                    const matchSubr = reSubr.exec(content);
-                    if (matchSubr) {
-                        const pos = positionAt(content, matchSubr.index, file);
-                        defs.push(pos);
-                    }
+                // 1. Subroutine
+                const matchSubr = new RegExp(`subroutine\\s+${name}\\s*\\(`).exec(content);
+                if (matchSubr) {
+                    matches.push(this.createMatchResult(file, content, matchSubr.index));
                 }
 
-                // Match define pulse/delay/etc. definitions
-                const reDefineVar = new RegExp(`define\\s+\\w+\\s+${name}\\b`);
-                const matchDefineVar = reDefineVar.exec(content);
+                // 2. Define variable
+                const matchDefineVar = new RegExp(`define\\s+\\w+\\s+${name}\\b`).exec(content);
                 if (matchDefineVar) {
-                    const pos = positionAt(content, matchDefineVar.index, file);
-                    defs.push(pos);
+                    matches.push(this.createMatchResult(file, content, matchDefineVar.index));
                 }
 
-                // Match #define BLKGRAD, etc. definitions
-                const reDefine = new RegExp(`define\\s+${name}\\b`);
-                const matchDefine = reDefine.exec(content);
+                // 3. Define macro
+                const matchDefine = new RegExp(`define\\s+${name}\\b`).exec(content);
                 if (matchDefine) {
-                    const pos = positionAt(content, matchDefine.index, file);
-                    defs.push(pos);
-                }                
+                    matches.push(this.createMatchResult(file, content, matchDefine.index));
+                }
             }
         }
 
-        return defs.length ? defs : null;
+        return matches;
+    }
+
+    private createMatchResult(file: string, content: string, index: number) {
+        const before = content.slice(0, index);
+        const after = content.slice(index);
+        const startLineIdx = before.lastIndexOf('\n') + 1;
+
+        // Try to capture full subroutine block
+        if (after.startsWith('subroutine')) {
+            const openBraceRelIdx = after.indexOf('{');
+            // Ensure { exists and is close
+            if (openBraceRelIdx !== -1 && openBraceRelIdx < 2000) {
+                let balance = 1;
+                let i = openBraceRelIdx + 1;
+                while (i < after.length && balance > 0) {
+                    if (after[i] === '{') balance++;
+                    else if (after[i] === '}') balance--;
+                    i++;
+                }
+                if (balance === 0) {
+                    let endOfLineRelIdx = after.indexOf('\n', i);
+                    if (endOfLineRelIdx === -1) endOfLineRelIdx = after.length;
+                    const lineText = content.slice(startLineIdx, index + endOfLineRelIdx).trim();
+                    return { file, index, content, lineText };
+                }
+            }
+        }
+
+        let endLineIdx = after.indexOf('\n');
+        if (endLineIdx === -1) endLineIdx = after.length + index;
+        else endLineIdx += index;
+
+        const lineText = content.slice(startLineIdx, endLineIdx).trim();
+        return { file, index, content, lineText };
     }
 
     private getSearchPaths(document: vscode.TextDocument): string[] {
         const paths: string[] = [];
+        const home = process.env.HOME || process.env.USERPROFILE;
         const spinscriptConfig = vscode.workspace.getConfiguration('spinscript');
         const vsCfgTsHome = spinscriptConfig.get<string>('tshome', '');
-        const tsHome = process.env.TSHOME || vsCfgTsHome || '';
-        const home = process.env.HOME || process.env.USERPROFILE;
+        const envTsHome = process.env.TSHOME;
+        const tsHome = envTsHome || vsCfgTsHome || '';
 
-        // // 1. Start with the directory of the currently open file
-        // paths.push(path.dirname(document.uri.fsPath));
+        console.log('SpinScript: home:', home, ' TSHOME:', envTsHome, ' VS Code setting tshome:', vsCfgTsHome);
 
-        // 2. Add paths from TopSpin property file
+        // 1. Add paths from TopSpin property file
         paths.push(...parsePulseProgramDirs(tsHome, home));
 
-        // 3. Add paths from VS Code settings
+        // 2. Add paths from VS Code settings
         paths.push(...spinscriptConfig.get<string[]>('pulseProgramPaths', []));
 
         // Resolve, validate, and deduplicate all collected paths
         const resolvedPaths = resolveAndValidatePaths(paths);
-        console.log('SpinScript: resolved search paths for definitions:', resolvedPaths);
 
         return resolvedPaths;
     }
